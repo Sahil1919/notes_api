@@ -58,15 +58,20 @@ async def create_note(request:Request, note: Note, current_user: dict = Depends(
 @app.get("/api/notes", response_model=List[Note])
 @rate_limit(limit=2,window_seconds=30)
 async def get_notes(request:Request,current_user: dict = Depends(get_current_user)):
-    notes = list(db.notes.find({"user_id": current_user["_id"]}))
+    notes = list(db.notes.find({"$or": [
+        {"user_id": current_user["_id"]},
+        {"shared_with": current_user["username"]}
+    ]}))
     return notes
 
 
 @app.get("/api/notes/{id}", response_model=Note)
 @rate_limit(limit=2,window_seconds=30)
 async def get_note_by_id(request:Request, id: str, current_user: dict = Depends(get_current_user)):
-    note = db.notes.find_one(
-        {"_id": ObjectId(id), "user_id": current_user["_id"]})
+    note = db.notes.find_one({"$or": [
+        {"_id": ObjectId(id), "user_id": current_user["_id"]},
+        {"_id": ObjectId(id), "shared_with": current_user["username"]}
+    ]})
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     return note

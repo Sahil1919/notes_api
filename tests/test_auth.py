@@ -101,6 +101,17 @@ def test_share_note():
     assert response.status_code == 200
     assert response.json() == {"message": "Note shared successfully"}
 
+def test_get_shared_note():
+    response = client.post("/api/auth/login", data={"username": "shareuser", "password": "sharepass"})
+    assert response.status_code == 200
+    share_user_token = response.json()["access_token"]
+
+    response = client.get("/api/notes", headers={"Authorization": f"Bearer {share_user_token}"})
+    assert response.status_code == 200
+    notes = response.json()
+    assert any(note["title"] == "Share Note" for note in notes)
+
+
 def test_search_notes():
     response = client.get("/api/search", params={"q": "share"},
                           headers={"Authorization": f"Bearer {token}"})
